@@ -100,8 +100,8 @@ NodeParam: &NodeParam {type: http, interval: 86400, health-check: {enable: true,
 
 # 锚点 - 节点订阅
 proxy-providers: 
-  我的节点: https://drfytjmjhggnrgergergergerg6555.saojc.xyz/api/v1/client/subscribe?token=6893414df1aadbfbdac2486557e8ff92
-    url: 'https://drfytjmjhggnrgergergergerg6555.saojc.xyz/api/v1/client/subscribe?token=6893414df1aadbfbdac2486557e8ff92'
+  我的节点:
+    url: ''
     <<: *NodeParam
     path: './proxy_provider/Providers.yaml'
 
