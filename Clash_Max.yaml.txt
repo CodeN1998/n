@@ -134,10 +134,8 @@ proxy-groups:
   - {name: YouTube, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/YouTube.png'}
   - {name: TikTok, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png'}
   - {name: Spotify, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Spotify.png'}
-  - {name: Gamer, type: select, include-all: true, filter: *FilterGame, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png'}
+  - {name: Game, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png'}
   - {name: Microsoft, type: select, proxies: [DIRECT, Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png'}
-  - {name: GlobalMedia, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/ForeignMedia.png'}
-
   - {name: 🇭🇰 香港节点, <<: *FallBack, filter: *FilterHK}
   - {name: 🇼🇸 台湾节点, <<: *FallBack, filter: *FilterTW}
   - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP}
@@ -150,11 +148,11 @@ proxy-groups:
 
 # 订阅规则
 rule-providers:
-  GlobalMedia:
+  GEME:
     <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GlobalMedia/GlobalMedia_Classical.yaml'
-    path: './RuleSet/GlobalMedia.yaml'
-
+    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Game/Game.yaml'
+    path: './RuleSet/Game.yaml'
+  
   ChinaMedia:
     <<: *RuleSet
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMedia/ChinaMedia.yaml'
@@ -194,12 +192,7 @@ rule-providers:
     <<: *RuleSet
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/PlayStation/PlayStation.yaml'
     path: './RuleSet/PlayStation.yaml'
-    
-  Epic:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Epic/Epic.yaml'
-    path: './RuleSet/Epic.yaml'
-    
+
   Xbox:
     <<: *RuleSet
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Xbox/Xbox.yaml'
@@ -235,6 +228,7 @@ rule-providers:
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.yaml'
     path: './RuleSet/LAN.yaml'
 
+  
 # 分流规则指向
 rules:
  - RULE-SET,Apple,Apple
@@ -244,11 +238,10 @@ rules:
  - RULE-SET,Disney+,Disney+
  - RULE-SET,YouTube,YouTube
  - RULE-SET,ChinaMedia,DIRECT
- - RULE-SET,GlobalMedia,GlobalMedia
- - RULE-SET,Nintendo,Gamer
- - RULE-SET,PlayStation,Gamer
- - RULE-SET,Epic,Gamer
- - RULE-SET,Xbox,Gamer
+ - RULE-SET,Nintendo,Game
+ - RULE-SET,PlayStation,Game
+ - RULE-SET,Epic,Game
+ - RULE-SET,Xbox,Game
  - RULE-SET,OpenAI,OpenAI
  - RULE-SET,Microsoft,Microsoft
  - RULE-SET,Proxy,Proxy
