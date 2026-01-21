@@ -148,7 +148,7 @@ proxy-groups:
 
 # 订阅规则
 rule-providers:
-  GEME:
+  Game:
     <<: *RuleSet
     url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Game/Game.yaml'
     path: './RuleSet/Game.yaml'
@@ -238,10 +238,7 @@ rules:
  - RULE-SET,Disney+,Disney+
  - RULE-SET,YouTube,YouTube
  - RULE-SET,ChinaMedia,DIRECT
- - RULE-SET,Nintendo,Game
- - RULE-SET,PlayStation,Game
- - RULE-SET,Epic,Game
- - RULE-SET,Xbox,Game
+ - RULE-SET,Game,Game
  - RULE-SET,OpenAI,OpenAI
  - RULE-SET,Microsoft,Microsoft
  - RULE-SET,Proxy,Proxy
