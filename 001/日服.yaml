@@ -1,0 +1,15 @@
+#格式前缀：
+#域名后缀：- DOMAIN-SUFFIX,
+#ip匹配： - IP-CIDR,
+#（英雄联盟）
+ - DOMAIN-SUFFIX,riotgames.com
+ - DOMAIN-SUFFIX,riotcdn.net
+ - DOMAIN-SUFFIX,akamai.net
+ - DOMAIN-SUFFIX,pvp.net
+ - DOMAIN-SUFFIX,rgpub.io
+ - DOMAIN-SUFFIX,auth.riotgames.com
+ - DOMAIN-SUFFIX,entitlements.auth.riotgames.com
+ - DOMAIN-SUFFIX,prod.jp1.lol.riotgames.com
+ - IP-CIDR,162.249.72.0/21
+ - IP-CIDR,192.64.168.0/21
+ - IP-CIDR,104.160.128.0/19
