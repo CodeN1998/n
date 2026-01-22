@@ -1,300 +1,149 @@
-# 「Clash_Max」配置
-# 适用版本：所有使用 Mihomo 内核的程序
+# ==========================================================
+# 「OpenClash_Max」全注解终极版 - 2026.01.22
+# ==========================================================
+# 适用：OpenClash (内核: Mihomo / Meta)
+# 地区：香港、台湾、日本、美国、新加坡、加拿大、韩国、英国、南极洲
+# 功能：Steam独立加速、全游戏入组、AI适配、系统全代理
+# ==========================================================
 
-port: 7890
-socks-port: 7891
-mixed-port: 7892
-redir-port: 7893
-tproxy-port: 7894
+# --- [第一部分：基础系统设置] ---
+port: 7890                    # HTTP 代理端口
+socks-port: 7891              # SOCKS5 代理端口
+mixed-port: 7892              # 混合端口（自动识别 HTTP/SOCKS）
+unified-delay: true           # 开启统一延迟：测速时包含握手时间，数值更真实，避免虚假低延迟
+tcp-concurrent: true          # TCP 并发：同时向多个服务器发请求，谁快用谁，极大提升网页打开速度
+find-process-mode: strict     # 严格进程模式：精准识别是哪个 App 在发请求，防止游戏流量跑错路
+global-client-fingerprint: chrome # 浏览器指纹伪装：将请求伪装成 Chrome，减少被目标网站封锁的概率
+allow-lan: true               # 允许局域网：让家里的电视、其他手机也能通过路由器科学上网
+mode: rule                    # 分流模式：按照下方 rules 列表里的规则进行“看人下菜”
+ipv6: true                    # 开启 IPv6：支持现代网络协议，访问部分国外站点更快
+udp: true                     # 【核心】必须开启：游戏联机、电报通话、Gemini 语音全靠它
 
-unified-delay: true
-geodata-mode: false
-geodata-loader: standard
-geo-auto-update: true
-geo-update-interval: 24
-tcp-concurrent: true
-find-process-mode: strict
-global-client-fingerprint: chrome
-
-allow-lan: true
-mode: rule
-log-level: info
-ipv6: true
-udp: true
-
-external-controller: 0.0.0.0:9090
-# external-ui: ui
-# external-ui-url: 'https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip'
-
-geox-url:
-  # geoip: 'https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geoip.dat'
-  # geosite: 'https://raw.githubusercontent.com/Loyalsoldier/v2ray-rules-dat/release/geosite.dat'
-  mmdb: 'https://geodata.kelee.one/Country-Masaiki.mmdb'
-  asn: 'https://geodata.kelee.one/GeoLite2-ASN-P3TERX.mmdb'
-
-profile:
-  store-selected: true
-  store-fake-ip: true
-
+# --- [第二部分：流量嗅探 - 解决分流不准的“照妖镜”] ---
 sniffer:
-  enable: true
-  force-dns-mapping: true
-  parse-pure-ip: true
-  override-destination: true
+  enable: true                # 开启嗅探：Clash 会“偷看”加密包里的真实域名，防止分流失效
+  force-dns-mapping: true     # 强制 DNS 映射：防止本地 DNS 污染（即使被运营商劫持也能找回真域名）
+  parse-pure-ip: true         # 纯 IP 解析：即使没有域名只有 IP，也尝试分析它属于哪个服务
+  override-destination: true  # 目标覆盖：识别出真域名后，强行按照真域名的分流规则走
   sniff:
-    HTTP:
-      ports: [80, 8080-8880]
-      override-destination: true
-    TLS:
-      ports: [443, 8443]
-    QUIC:
-      ports: [443, 8443]
-  force-domain:
-    - +.v2ex.com
+    HTTP: {ports: [80, 8080-8880], override-destination: true}
+    TLS: {ports: [443, 8443]}
+    QUIC: {ports: [443, 8443]}
+  skip-domain:                # 【直连名单】这些域名太敏感或容易崩，不进行嗅探，直接放行
+    - Mijia Cloud             # 米家智能家居，防止掉线
+    - "+.riotgames.com"       # 修复英雄联盟/Riot登录时报“证书不匹配”
+    - "+.pvp.net"             # 英雄联盟核心通信
+    - "+.xd.com"              # 心动网络/心动小镇，防止登录失败
+    - "+.google.com"          # 适配 Gemini 语音和搜索
+    - "+.bilibili.com"        # B站弹幕加速，跳过嗅探减少延迟
+    - "+.steampowered.com"    # Steam 商店与好友列表稳定连接
 
-  skip-domain:
-    - Mijia Cloud
-    - "+.riotgames.com"
-    - "+.xd.com"
-    - "+.heartopia.com"
-    - "+.honorofkings.com"
-    - "+.levelinfinite.com"
-    - "+.riot.com"
-    - "+.pvp.net"
-
-tun:
-  enable: true
-  stack: system
-  dns-hijack:
-    - any:53
-  auto-route: true
-  auto-detect-interface: true
-
-# P2P下载端口
-listeners:
-- name: socks5-in-1
-  type: socks
-  port: 10808
-  listen: 0.0.0.0
-  udp: true
-  users: []
-  proxy: DIRECT
-
+# --- [第三部分：DNS 设置 - 网络的“导航员”] ---
 dns:
-  enable: true
-  prefer-h3: true
-  listen: 0.0.0.0:1053
-  ipv6: false
-  enhanced-mode: fake-ip
-  fake-ip-range: 28.0.0.1/8
-  fake-ip-filter:
-    - "*"
-    - "+.google.com"
-    - "+.googleapis.com"
-    - "+.gemini.google.com"
-    - "+.google.cn"  # 屏蔽国内请求
-    - "+.honorofkings.com"
-    - "+.levelinfinite.com"
-    - "+.riotgames.com"
-    - "+.pvp.net"
-    - "+.riot.com"
-    - "+.xd.com"
-    - "+.heartopia.com"
-    - "+.anticheat.riotgames.com"
-    - "auth.riotgames.com"
-    - "entitlements.auth.riotgames.com"
-  default-nameserver:
-    - 223.5.5.5
-    - 223.6.6.6
-  nameserver:
-    - https://223.5.5.5/dns-query
-    - https://223.6.6.6/dns-query
+  enable: true                # 开启内置 DNS：由 Clash 接管解析，彻底解决 DNS 污染
+  enhanced-mode: fake-ip      # 虚拟 IP 模式：OpenClash 标配，响应速度最快
+  fake-ip-range: 28.0.0.1/8   # 分配的虚拟 IP 段
+  fake-ip-filter:             # 【真实解析名单】这些必须用真 IP，否则会提示地区不对或连不上
+    - "*"                     # 默认全部虚拟化
+    - "+.google.com"          # Gemini 会检查你的解析地址
+    - "+.riotgames.com"       # Riot 客户端安全校验
+    - "+.microsoft.com"       # Windows 更新，防止下载卡 0%
+    - "+.apple.com"           # 苹果服务
+    - "+.steampowered.com"    # Steam 核心服务
+  default-nameserver: [223.5.5.5, 119.29.29.29] # 国内 DNS 查询基础
+  nameserver: [https://223.5.5.5/dns-query, https://1.1.1.1/dns-query] # 加密 DNS 查询
 
-proxies:
-
-# 锚点 - 节点订阅的参数 [每24小时更新一次订阅节点，每 60 秒一次健康检查]
-NodeParam: &NodeParam {type: http, interval: 86400, health-check: {enable: true, url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 60}}
-
-# 锚点 - 节点订阅
+# --- [第四部分：节点获取 - 订阅你的机场] ---
 proxy-providers: 
-  我的节点:
+  MyNodes:                    # 订阅库名称
+    type: http
     url: 'https://drfytjmjhggnrgergergergerg6555.saojc.xyz/api/v1/client/subscribe?token=6893414df1aadbfbdac2486557e8ff92'
-    <<: *NodeParam
-    path: './proxy_provider/Providers.yaml'
+    interval: 86400           # 24小时自动更新一次节点列表
+    path: './proxy_provider/nodes.yaml' # 节点保存路径
+    health-check: {enable: true, url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 60}
 
-# 锚点 - 节点筛选组
-FilterHK: &FilterHK '^(?=.*((?i)🇭🇰|香港|(\b(HK|Hong)\b))).*$'
-FilterTW: &FilterTW '^(?=.*((?i)🇼🇸|台湾|(\b(TW|Taiwan)\b))).*$'
-FilterJP: &FilterJP '^(?=.*((?i)🇯🇵|日本|川日|东京|大阪|泉日|埼玉|(\b(JP|Japan)\b))).*$'
-FilterKR: &FilterKR '^(?=.*((?i)🇰🇷|韩国|韓|首尔|(\b(KR|Korea)\b))).*$'
-FilterSG: &FilterSG '^(?=.*((?i)🇸🇬|新加坡|狮|(\b(SG|Singapore)\b))).*$'
-FilterUS: &FilterUS '^(?=.*((?i)🇺🇸|美国|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|(\b(US|United States)\b))).*$'
-FilterUK: &FilterUK '^(?=.*((?i)🇬🇧|英国|伦敦|(\b(UK|United Kingdom)\b))).*$'
-FilterFR: &FilterFR '^(?=.*((?i)🇫🇷|法国|(\b(FR|France)\b))).*$'
-FilterDE: &FilterDE '^(?=.*((?i)🇩🇪|德国|(\b(DE|Germany)\b))).*$'
-FilterGame: &FilterGame '^(?=.*((?i)游戏|🎮|(\b(GAME)\b)))(?!.*((?i)回国|校园)).*$'
-FilterAll: &FilterAll '^(?=.*(.))(?!.*((?i)群|邀请|返利|循环|官网|客服|网站|网址|获取|订阅|流量|到期|机场|下次|版本|官址|备用|过期|已用|联系|邮箱|工单|贩卖|通知|倒卖|防止|国内|地址|频道|无法|说明|使用|提示|特别|访问|支持|教程|关注|更新|作者|加入|(\b(USE|USED|TOTAL|EXPIRE|EMAIL|Panel|Channel|Author)\b|(\d{4}-\d{2}-\d{2}|\d+G)))).*$'
+# --- [第五部分：正则筛选 - 自动给节点分类] ---
+FilterHK: &FilterHK '(?i)香港|HK|Hong Kong'
+FilterTW: &FilterTW '(?i)台湾|TW|Taiwan'
+FilterJP: &FilterJP '(?i)日本|JP|Japan'
+FilterUS: &FilterUS '(?i)美国|US|United States'
+FilterSG: &FilterSG '(?i)新加坡|SG|Singapore|狮'
+FilterCA: &FilterCA '(?i)加拿大|CA|Canada'
+FilterKR: &FilterKR '(?i)韩国|KR|Korea|韩'
+FilterGB: &FilterGB '(?i)英国|UK|United Kingdom|英'
+FilterAQ: &FilterAQ '(?i)南极|AQ|Antarctica'
 
-# 锚点 - 故障转移参数 [每 10 秒一次惰性健康检查，时延超过 3 秒判定为失败，失败 3 次则自动触发健康检查]
-FallBack: &FallBack {type: fallback, interval: 10, lazy: true, url: 'http://connectivitycheck.gstatic.com/generate_204', disable-udp: false, timeout: 3000, max-failed-times: 3, hidden: true, include-all-providers: true}
-# 锚点 - 规则参数 [每天更新一次订阅规则，更新规则时使用Proxy策略]
+# 策略模板：故障转移（自动换掉挂掉的节点）
+FallBack: &FallBack {type: fallback, interval: 300, lazy: true, url: 'http://connectivitycheck.gstatic.com/generate_204', include-all-providers: true}
+# 规则模板：引用外部规则集
 RuleSet: &RuleSet {type: http, behavior: classical, interval: 86400, format: yaml, proxy: Proxy}
 
-# 策略组
+# --- [第六部分：策略组 - 你的“遥控器”] ---
 proxy-groups: 
-  - {name: Proxy, type: select, proxies: [🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/pompurin404/mihomo-party/master/resources/icon.png'}
-  - {name: Apple, type: select, proxies: [DIRECT, Proxy,🇼🇸 台湾节点, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Apple_1.png'}
-  - {name: OpenAI, type: select, proxies: [🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/ChatGPT.png'}
-  - {name: Gemini, type: select, proxies: [🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/ChatGPT.png'}
-  - {name: Telegram, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Telegram.png'}
-  - {name: Netflix, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Netflix.png'}
-  - {name: Disney+, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Disney.png'}
-  - {name: YouTube, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/YouTube.png'}
-  - {name: TikTok, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/TikTok.png'}
-  - {name: Spotify, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Spotify.png'}
-  - {name: Game, type: select, proxies: [Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png'}
-  - {name: Microsoft, type: select, proxies: [DIRECT, Proxy, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇺🇸 美国节点, 🇬🇧 英国节点, 🇫🇷 法国节点, 🇩🇪 德国节点], icon: 'https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Microsoft.png'}
+  # 【主代理】兜底出口
+  - {name: Proxy, type: select, proxies: [自动测试, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇨🇦 加拿大节点, 🇰🇷 韩国节点, 🇬🇧 英国节点, 🇦🇶 南极洲节点]}
+  
+  # 【自动测试】自动选最快的（适合刷视频、查资料）
+  - {name: 自动测试, type: url-test, proxies: [🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇨🇦 加拿大节点, 🇰🇷 韩国节点, 🇬🇧 英国节点], url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 300, tolerance: 50}
+
+  # 【Game】全平台游戏（除Steam外：Riot/Epic/手机网游等）
+  # 玩亚服首选：日本、韩国、香港
+  - {name: Game, type: select, proxies: [🇯🇵 日本节点, 🇰🇷 韩国节点, 🇭🇰 香港节点, 🇸🇬 新加坡节点, Proxy]}
+
+  # 【Steam】独立加速（下载时切 DIRECT，商店联机切日本/香港）
+  - {name: Steam, type: select, proxies: [DIRECT, Proxy, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇺🇸 美国节点]}
+
+  # 【Gemini】谷歌 AI 专区（已自动避开香港，确保 AI 不报错）
+  - {name: Gemini, type: select, proxies: [🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇨🇦 加拿大节点, 🇬🇧 英国节点, 🇰🇷 韩国节点, 🇼🇸 台湾节点]}
+
+  # 应用分流组
+  - {name: YouTube, type: select, proxies: [自动测试, 🇭🇰 香港节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点]}
+  - {name: TikTok, type: select, proxies: [🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇺🇸 美国节点]}
+  - {name: Telegram, type: select, proxies: [🇸🇬 新加坡节点, Proxy, 🇭🇰 香港节点]}
+  - {name: Bilibili, type: select, proxies: [DIRECT, 🇭🇰 香港节点, 🇼🇸 台湾节点]}
+  - {name: Google, type: select, proxies: [Proxy, 自动测试, 🇺🇸 美国节点]}
+  - {name: Apple, type: select, proxies: [DIRECT, Proxy, 🇺🇸 美国节点]}
+  - {name: Microsoft, type: select, proxies: [DIRECT, Proxy, 自动测试]}
+
+  # --- [区域子组：这部分必须存在，否则上面会报错] ---
   - {name: 🇭🇰 香港节点, <<: *FallBack, filter: *FilterHK}
   - {name: 🇼🇸 台湾节点, <<: *FallBack, filter: *FilterTW}
-  - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP}
-  - {name: 🇰🇷 韩国节点, <<: *FallBack, filter: *FilterKR}
-  - {name: 🇸🇬 新加坡节点, <<: *FallBack, filter: *FilterSG}
+  - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP} # 已补齐，修复 Not Found 错误
   - {name: 🇺🇸 美国节点, <<: *FallBack, filter: *FilterUS}
-  - {name: 🇬🇧 英国节点, <<: *FallBack, filter: *FilterUK}
-  - {name: 🇫🇷 法国节点, <<: *FallBack, filter: *FilterFR}
-  - {name: 🇩🇪 德国节点, <<: *FallBack, filter: *FilterDE}
+  - {name: 🇸🇬 新加坡节点, <<: *FallBack, filter: *FilterSG}
+  - {name: 🇨🇦 加拿大节点, <<: *FallBack, filter: *FilterCA}
+  - {name: 🇰🇷 韩国节点, <<: *FallBack, filter: *FilterKR}
+  - {name: 🇬🇧 英国节点, <<: *FallBack, filter: *FilterGB}
+  - {name: 🇦🇶 南极洲节点, <<: *FallBack, filter: *FilterAQ}
 
-# 订阅规则
+# --- [第七部分：规则集订阅 - “云端”更新的名单] ---
 rule-providers:  
-  HoK:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/HonorOfKings/HonorOfKings.yaml'
-    path: './RuleSet/HonorOfKings.yaml'
-  
-  Riot:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Riot/Riot.yaml'
-    path: './RuleSet/Riot.yaml'
+  Steam: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Steam/Steam.yaml', path: './RuleSet/Steam.yaml'}
+  AllGame: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Game/Game.yaml', path: './RuleSet/AllGame.yaml'}
+  Bilibili: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/BiliBili/BiliBili.yaml', path: './RuleSet/Bilibili.yaml'}
+  YouTube: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/YouTube/YouTube.yaml', path: './RuleSet/YouTube.yaml'}
+  Telegram: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.yaml', path: './RuleSet/Telegram.yaml'}
+  TikTok: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/TikTok/TikTok.yaml', path: './RuleSet/TikTok.yaml'}
+  Google: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml', path: './RuleSet/Google.yaml'}
+  Apple: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Apple/Apple_Classical_No_Resolve.yaml', path: './RuleSet/Apple.yaml'}
+  Microsoft: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Microsoft/Microsoft_No_Resolve.yaml', path: './RuleSet/Microsoft.yaml'}
+  Gemini: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Gemini/Gemini.yaml', path: './RuleSet/Gemini.yaml'}
+  China: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/ChinaMax/ChinaMax_Classical.yaml', path: './RuleSet/China.yaml'}
 
-  LeagueOfLegends:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/LeagueOfLegends/LeagueOfLegends.yaml'
-    path: './RuleSet/LeagueOfLegends.yaml'
-  
-  XD:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/CodeN1998/n/refs/heads/main/001/XD.yaml'
-    path: './RuleSet/XD.yaml'
-  
-  ChinaMedia:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMedia/ChinaMedia.yaml'
-    path: './RuleSet/ChinaMedia.yaml'
-
-  Netflix:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Netflix/Netflix_Classical_No_Resolve.yaml'
-    path: './RuleSet/Netflix.yaml'
-
-  Disney+:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Disney/Disney_No_Resolve.yaml'
-    path: './RuleSet/Disney+.yaml'
-
-  YouTube:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/YouTube/YouTube_No_Resolve.yaml'
-    path: './RuleSet/YouTube.yaml'
-
-  Apple:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Apple/Apple_Classical_No_Resolve.yaml'
-    path: './RuleSet/Apple.yaml'
-
-  Microsoft:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Microsoft/Microsoft_No_Resolve.yaml'
-    path: './RuleSet/Microsoft.yaml'
-    
-  Nintendo:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Nintendo/Nintendo.yaml'
-    path: './RuleSet/Nintendo.yaml'
-    
-  PlayStation:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/PlayStation/PlayStation.yaml'
-    path: './RuleSet/PlayStation.yaml'
-
-  Xbox:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Xbox/Xbox.yaml'
-    path: './RuleSet/Xbox.yaml'
-  
-  Game:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Game/Game.yaml'
-    path: './RuleSet/Game.yaml'
-
-  TikTok:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/TikTok/TikTok_No_Resolve.yaml'
-    path: './RuleSet/TikTok.yaml'
-
-  Spotify:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Spotify/Spotify.yaml'
-    path: './RuleSet/Spotify.yaml'
-
-  OpenAI:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/OpenAI/OpenAI_No_Resolve.yaml'
-    path: './RuleSet/OpenAI.yaml'
-   
-  Gemini:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Gemini/Gemini.yaml'
-    path: './RuleSet/Gemini.yaml'
-
-  Proxy:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Proxy/Proxy_Classical_No_Resolve.yaml'
-    path: './RuleSet/Proxy.yaml'
-
-  China:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/ChinaMax/ChinaMax_Classical.yaml'
-    path: './RuleSet/China.yaml'
-
-  LAN:
-    <<: *RuleSet
-    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.yaml'
-    path: './RuleSet/LAN.yaml'
-
-  
-# 分流规则指向
+# --- [第八部分：最终分流规则 - 匹配逻辑] ---
 rules:
- - DOMAIN-SUFFIX,riotgames.com,Game
- - DOMAIN-SUFFIX,riot.com,Game
- - DOMAIN-SUFFIX,pvp.net,Game
- - RULE-SET,Riot,Game
- - RULE-SET,LeagueOfLegends,Game
- - RULE-SET,HoK,Game
- - RULE-SET,Spotify,Spotify
- - RULE-SET,XD,Game
- - RULE-SET,Apple,Apple
- - RULE-SET,Spotify,Spotify
- - RULE-SET,TikTok,TikTok
- - RULE-SET,Netflix,Netflix
- - RULE-SET,Disney+,Disney+
- - RULE-SET,YouTube,YouTube
- - RULE-SET,ChinaMedia,DIRECT
- - RULE-SET,Gemini,Gemini
- - RULE-SET,OpenAI,OpenAI
- - RULE-SET,Microsoft,Microsoft
- - RULE-SET,Proxy,Proxy
- - RULE-SET,Game,Game
- - RULE-SET,LAN,DIRECT
- - RULE-SET,China,DIRECT
- - GEOIP,CN,DIRECT
- - MATCH,Proxy
+  # 顺序极其重要：从上往下匹配，一旦中了一项，就不再往下看
+  - RULE-SET,Steam,Steam           # 1. 优先判定 Steam
+  - DOMAIN-SUFFIX,riotgames.com,Game # 2. 特别锁定 Riot
+  - RULE-SET,AllGame,Game          # 3. 锁定其他所有游戏
+  - RULE-SET,Gemini,Gemini         # 4. 锁定 AI
+  - RULE-SET,Telegram,Telegram     # 5. 锁定社交
+  - RULE-SET,YouTube,YouTube       # 6. 锁定视频
+  - RULE-SET,TikTok,TikTok
+  - RULE-SET,Bilibili,Bilibili
+  - RULE-SET,Google,Google         # 7. 锁定系统厂商
+  - RULE-SET,Apple,Apple
+  - RULE-SET,Microsoft,Microsoft
+  - RULE-SET,China,DIRECT          # 8. 国内流量直连（不走代理）
+  - GEOIP,CN,DIRECT                # 9. 国内 IP 直连
+  - MATCH,Proxy                    # 10. 最后：都没匹配上的走 Proxy 代理组
