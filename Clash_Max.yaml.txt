@@ -57,7 +57,7 @@ dns:
 proxy-providers: 
   MyNodes:                    # 订阅库名称
     type: http
-    url: 'https://drfytjmjhggnrgergergergerg6555.saojc.xyz/api/v1/client/subscribe?token=6893414df1aadbfbdac2486557e8ff92'
+    url: '机场链接'
     interval: 86400           # 24小时自动更新一次节点列表
     path: './proxy_provider/nodes.yaml' # 节点保存路径
     health-check: {enable: true, url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 60}
