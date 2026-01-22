@@ -1,65 +1,70 @@
+
 # ==========================================================
 # 「OpenClash_Max」全注解终极版 - 2026.01.22
 # ==========================================================
-# 适用：OpenClash (内核: Mihomo / Meta)
+# 适用：OpenClash (内核建议使用: Mihomo / Meta)
 # 地区：香港、台湾、日本、美国、新加坡、加拿大、韩国、英国、南极洲
-# 功能：Steam独立加速、全游戏入组、AI适配、系统全代理
+# 修复：英雄联盟 SIPT 验证错误、Steam 商店、Gemini AI
 # ==========================================================
 
 # --- [第一部分：基础系统设置] ---
 port: 7890                    # HTTP 代理端口
 socks-port: 7891              # SOCKS5 代理端口
 mixed-port: 7892              # 混合端口（自动识别 HTTP/SOCKS）
-unified-delay: true           # 开启统一延迟：测速时包含握手时间，数值更真实，避免虚假低延迟
+unified-delay: true           # 开启统一延迟：测速包含握手时间，数值更真实，避免虚假低延迟
 tcp-concurrent: true          # TCP 并发：同时向多个服务器发请求，谁快用谁，极大提升网页打开速度
-find-process-mode: strict     # 严格进程模式：精准识别是哪个 App 在发请求，防止游戏流量跑错路
-global-client-fingerprint: chrome # 浏览器指纹伪装：将请求伪装成 Chrome，减少被目标网站封锁的概率
-allow-lan: true               # 允许局域网：让家里的电视、其他手机也能通过路由器科学上网
-mode: rule                    # 分流模式：按照下方 rules 列表里的规则进行“看人下菜”
-ipv6: true                    # 开启 IPv6：支持现代网络协议，访问部分国外站点更快
-udp: true                     # 【核心】必须开启：游戏联机、电报通话、Gemini 语音全靠它
+find-process-mode: strict     # 严格进程模式：精准识别是哪个 App 在发请求，防止流量分流错误
+global-client-fingerprint: chrome # 浏览器指纹伪装：将请求伪装成 Chrome，减少被网站封锁的概率
+allow-lan: true               # 允许局域网：让家里的电视、其他手机也能共享科学上网
+mode: rule                    # 分流模式：按照下方 rules 列表里的规则进行分流
+ipv6: true                    # 开启 IPv6 兼容
+udp: true                     # 【核心】必须开启：英雄联盟对局联机、电报通话、AI 语音全靠它
 
-# --- [第二部分：流量嗅探 - 解决分流不准的“照妖镜”] ---
+# --- [第二部分：流量嗅探 - 解决 SIPT 错误的关键] ---
 sniffer:
-  enable: true                # 开启嗅探：Clash 会“偷看”加密包里的真实域名，防止分流失效
-  force-dns-mapping: true     # 强制 DNS 映射：防止本地 DNS 污染（即使被运营商劫持也能找回真域名）
-  parse-pure-ip: true         # 纯 IP 解析：即使没有域名只有 IP，也尝试分析它属于哪个服务
-  override-destination: true  # 目标覆盖：识别出真域名后，强行按照真域名的分流规则走
+  enable: true                # 开启嗅探：Clash 会解析加密包里的真实域名，防止分流失效
+  force-dns-mapping: true     # 强制 DNS 映射：防止本地 DNS 污染
+  parse-pure-ip: true         # 纯 IP 解析：即使没有域名也尝试识别其背后的服务
+  override-destination: true  # 目标覆盖：识别出真域名后，强行按照分流规则走
   sniff:
     HTTP: {ports: [80, 8080-8880], override-destination: true}
     TLS: {ports: [443, 8443]}
     QUIC: {ports: [443, 8443]}
-  skip-domain:                # 【直连名单】这些域名太敏感或容易崩，不进行嗅探，直接放行
-    - Mijia Cloud             # 米家智能家居，防止掉线
-    - "+.riotgames.com"       # 修复英雄联盟/Riot登录时报“证书不匹配”
-    - "+.pvp.net"             # 英雄联盟核心通信
-    - "+.xd.com"              # 心动网络/心动小镇，防止登录失败
-    - "+.google.com"          # 适配 Gemini 语音和搜索
-    - "+.bilibili.com"        # B站弹幕加速，跳过嗅探减少延迟
-    - "+.steampowered.com"    # Steam 商店与好友列表稳定连接
+  skip-domain:                # 【专项修复】名单内的域名不进行嗅探，防止证书冲突导致 SIPT 错误
+    - "+.riotgames.com"       # Riot 账户登录系统（SIPT 修复核心）
+    - "+.pvp.net"             # 英雄联盟核心通信（SIPT 修复核心）
+    - "+.riot.com"            # Riot 全球服务
+    - "+.leagueoflegends.com" # 游戏官网
+    - "+.vanguard.com"        # 反作弊系统
+    - Mijia Cloud             # 米家智能家居
+    - "+.xd.com"              # 心动网络
+    - "+.google.com"          # 适配 Gemini 语音
+    - "+.bilibili.com"        # B站弹幕加速
+    - "+.steampowered.com"    # Steam 商店稳定连接
 
 # --- [第三部分：DNS 设置 - 网络的“导航员”] ---
 dns:
   enable: true                # 开启内置 DNS：由 Clash 接管解析，彻底解决 DNS 污染
   enhanced-mode: fake-ip      # 虚拟 IP 模式：OpenClash 标配，响应速度最快
   fake-ip-range: 28.0.0.1/8   # 分配的虚拟 IP 段
-  fake-ip-filter:             # 【真实解析名单】这些必须用真 IP，否则会提示地区不对或连不上
+  fake-ip-filter:             # 【DNS 白名单】这些必须用真实 IP 解析，严禁虚拟化，防止游戏报错
     - "*"                     # 默认全部虚拟化
-    - "+.google.com"          # Gemini 会检查你的解析地址
     - "+.riotgames.com"       # Riot 客户端安全校验
-    - "+.microsoft.com"       # Windows 更新，防止下载卡 0%
+    - "+.pvp.net"
+    - "+.google.com"          # Gemini 会检查你的解析地址
+    - "+.microsoft.com"       # Windows 更新加速
     - "+.apple.com"           # 苹果服务
     - "+.steampowered.com"    # Steam 核心服务
   default-nameserver: [223.5.5.5, 119.29.29.29] # 国内 DNS 查询基础
   nameserver: [https://223.5.5.5/dns-query, https://1.1.1.1/dns-query] # 加密 DNS 查询
 
-# --- [第四部分：节点获取 - 订阅你的机场] ---
+# --- [第四部分：节点获取] ---
 proxy-providers: 
-  MyNodes:                    # 订阅库名称
+  MyNodes:
     type: http
-    url: '机场链接'
+    url: 'https://drfytjmjhggnrgergergergerg6555.saojc.xyz/api/v1/client/subscribe?token=6893414df1aadbfbdac2486557e8ff92'
     interval: 86400           # 24小时自动更新一次节点列表
-    path: './proxy_provider/nodes.yaml' # 节点保存路径
+    path: './proxy_provider/nodes.yaml'
     health-check: {enable: true, url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 60}
 
 # --- [第五部分：正则筛选 - 自动给节点分类] ---
@@ -73,9 +78,7 @@ FilterKR: &FilterKR '(?i)韩国|KR|Korea|韩'
 FilterGB: &FilterGB '(?i)英国|UK|United Kingdom|英'
 FilterAQ: &FilterAQ '(?i)南极|AQ|Antarctica'
 
-# 策略模板：故障转移（自动换掉挂掉的节点）
 FallBack: &FallBack {type: fallback, interval: 300, lazy: true, url: 'http://connectivitycheck.gstatic.com/generate_204', include-all-providers: true}
-# 规则模板：引用外部规则集
 RuleSet: &RuleSet {type: http, behavior: classical, interval: 86400, format: yaml, proxy: Proxy}
 
 # --- [第六部分：策略组 - 你的“遥控器”] ---
@@ -83,32 +86,31 @@ proxy-groups:
   # 【主代理】兜底出口
   - {name: Proxy, type: select, proxies: [自动测试, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇨🇦 加拿大节点, 🇰🇷 韩国节点, 🇬🇧 英国节点, 🇦🇶 南极洲节点]}
   
-  # 【自动测试】自动选最快的（适合刷视频、查资料）
+  # 【自动测试】自动选最快的
   - {name: 自动测试, type: url-test, proxies: [🇭🇰 香港节点, 🇼🇸 台湾节点, 🇯🇵 日本节点, 🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇨🇦 加拿大节点, 🇰🇷 韩国节点, 🇬🇧 英国节点], url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 300, tolerance: 50}
 
-  # 【Game】全平台游戏（除Steam外：Riot/Epic/手机网游等）
-  # 玩亚服首选：日本、韩国、香港
-  - {name: Game, type: select, proxies: [🇯🇵 日本节点, 🇰🇷 韩国节点, 🇭🇰 香港节点, 🇸🇬 新加坡节点, Proxy]}
+  # 【Game】全平台游戏（修复 SIPT 后，首选日本、韩国或香港，延迟最低）
+  - {name: Game, type: select, proxies: [🇯🇵 日本节点, 🇰🇷 韩国节点, 🇭🇰 香港节点, 🇼🇸 台湾节点, 🇸🇬 新加坡节点, Proxy]}
 
-  # 【Steam】独立加速（下载时切 DIRECT，商店联机切日本/香港）
+  # 【Steam】独立加速（下载时切 DIRECT，联机选节点）
   - {name: Steam, type: select, proxies: [DIRECT, Proxy, 🇭🇰 香港节点, 🇯🇵 日本节点, 🇺🇸 美国节点]}
 
-  # 【Gemini】谷歌 AI 专区（已自动避开香港，确保 AI 不报错）
+  # 【Gemini】谷歌 AI 专区（已自动避开香港）
   - {name: Gemini, type: select, proxies: [🇺🇸 美国节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇨🇦 加拿大节点, 🇬🇧 英国节点, 🇰🇷 韩国节点, 🇼🇸 台湾节点]}
 
   # 应用分流组
   - {name: YouTube, type: select, proxies: [自动测试, 🇭🇰 香港节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点]}
   - {name: TikTok, type: select, proxies: [🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇰🇷 韩国节点, 🇺🇸 美国节点]}
-  - {name: Telegram, type: select, proxies: [🇸🇬 新加坡节点, Proxy, 🇭🇰 香港节点]}
+  - {name: Telegram, type: select, proxies: [🇸🇬 新加坡节点, Proxy]}
   - {name: Bilibili, type: select, proxies: [DIRECT, 🇭🇰 香港节点, 🇼🇸 台湾节点]}
   - {name: Google, type: select, proxies: [Proxy, 自动测试, 🇺🇸 美国节点]}
-  - {name: Apple, type: select, proxies: [DIRECT, Proxy, 🇺🇸 美国节点]}
-  - {name: Microsoft, type: select, proxies: [DIRECT, Proxy, 自动测试]}
+  - {name: Apple, type: select, proxies: [DIRECT, Proxy]}
+  - {name: Microsoft, type: select, proxies: [DIRECT, Proxy]}
 
-  # --- [区域子组：这部分必须存在，否则上面会报错] ---
+  # --- [区域子组] ---
   - {name: 🇭🇰 香港节点, <<: *FallBack, filter: *FilterHK}
   - {name: 🇼🇸 台湾节点, <<: *FallBack, filter: *FilterTW}
-  - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP} # 已补齐，修复 Not Found 错误
+  - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP}
   - {name: 🇺🇸 美国节点, <<: *FallBack, filter: *FilterUS}
   - {name: 🇸🇬 新加坡节点, <<: *FallBack, filter: *FilterSG}
   - {name: 🇨🇦 加拿大节点, <<: *FallBack, filter: *FilterCA}
@@ -116,7 +118,7 @@ proxy-groups:
   - {name: 🇬🇧 英国节点, <<: *FallBack, filter: *FilterGB}
   - {name: 🇦🇶 南极洲节点, <<: *FallBack, filter: *FilterAQ}
 
-# --- [第七部分：规则集订阅 - “云端”更新的名单] ---
+# --- [第七部分：规则集订阅] ---
 rule-providers:  
   Steam: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Steam/Steam.yaml', path: './RuleSet/Steam.yaml'}
   AllGame: {<<: *RuleSet, url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Game/Game.yaml', path: './RuleSet/AllGame.yaml'}
@@ -132,18 +134,22 @@ rule-providers:
 
 # --- [第八部分：最终分流规则 - 匹配逻辑] ---
 rules:
-  # 顺序极其重要：从上往下匹配，一旦中了一项，就不再往下看
-  - RULE-SET,Steam,Steam           # 1. 优先判定 Steam
-  - DOMAIN-SUFFIX,riotgames.com,Game # 2. 特别锁定 Riot
-  - RULE-SET,AllGame,Game          # 3. 锁定其他所有游戏
-  - RULE-SET,Gemini,Gemini         # 4. 锁定 AI
-  - RULE-SET,Telegram,Telegram     # 5. 锁定社交
-  - RULE-SET,YouTube,YouTube       # 6. 锁定视频
+  # 必须将 Riot 放在最顶端，防止被通用规则拦截
+  - DOMAIN-KEYWORD,riot,Game
+  - DOMAIN-SUFFIX,riotgames.com,Game
+  - DOMAIN-SUFFIX,pvp.net,Game
+  - DOMAIN-SUFFIX,riot.com,Game
+  
+  - RULE-SET,Steam,Steam
+  - RULE-SET,AllGame,Game
+  - RULE-SET,Gemini,Gemini
+  - RULE-SET,Telegram,Telegram
+  - RULE-SET,YouTube,YouTube
   - RULE-SET,TikTok,TikTok
   - RULE-SET,Bilibili,Bilibili
-  - RULE-SET,Google,Google         # 7. 锁定系统厂商
+  - RULE-SET,Google,Google
   - RULE-SET,Apple,Apple
   - RULE-SET,Microsoft,Microsoft
-  - RULE-SET,China,DIRECT          # 8. 国内流量直连（不走代理）
-  - GEOIP,CN,DIRECT                # 9. 国内 IP 直连
-  - MATCH,Proxy                    # 10. 最后：都没匹配上的走 Proxy 代理组
+  - RULE-SET,China,DIRECT
+  - GEOIP,CN,DIRECT
+  - MATCH,Proxy
