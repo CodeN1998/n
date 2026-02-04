@@ -1,0 +1,171 @@
+# ==============================================================================
+# 「Clash_Max」 极致精简全注解版 (2026 优化)
+# ------------------------------------------------------------------------------
+# 设计理念：去冗余、高并发、低延迟、规则逻辑清晰
+# 适用场景：全平台通用（Android/Windows/macOS），侧重游戏加速与日常浏览平衡
+# ==============================================================================
+
+# [第一部分：基础代理接口设置]
+port: 7890                    # HTTP 代理端口，供浏览器或一般软件使用
+socks-port: 7891              # SOCKS5 代理端口
+mixed-port: 7892              # 混合端口 (同时支持 HTTP/SOCKS5)
+allow-lan: true               # 允许局域网连接 (开启后可让 Switch/PS5 通过此设备代理)
+mode: rule                    # 运行模式：规则分流 (核心模式)
+log-level: info               # 日志级别：info (记录关键信息)
+ipv6: false                   # 强制关闭 IPv6 (有效防止游戏匹配到远端服务器导致的断连)
+
+# --- 极致并发与性能优化参数 ---
+unified-delay: true           # 统一延迟计算：剔除 TLS 握手时间，反映真实的节点链路延迟
+tcp-concurrent: true          # TCP 并发连接：同时向多个 IP 发起请求，取最快响应，彻底解决白屏
+global-client-fingerprint: chrome # 伪装浏览器指纹：降低被目标网站识别并封锁的概率
+#嗅探与白名单:
+sniffer:  
+  enable: true
+  parse-pure-ip: true
+  override-destination: true
+sniff:
+  TLS: {ports: [443, 8443]}
+  HTTP: {ports: [80, 8080-8880], override-destination: true}
+  skip-domain:
+    - "Mijia Cloud"
+    - "+.apple.com"
+    - "+.push.apple.com"
+    # --- 游戏核心白名单 ---
+    - "+.honorofkings.com"
+    - "+.levelinfinite.com"
+    - "+.intlgame.com"
+    - "+.proximabeta.com"
+    - "+.pubgmobile.com"
+    - "+.pubg.com"
+    - "+.igamecj.com"
+    - "+.steamcontent.com"
+# [第二部分：TUN 模式设置 (系统级流量接管)]
+tun:
+  enable: true                # 开启 TUN 模式：虚拟网卡，可拦截所有软件流量 (包括游戏)
+  stack: system                # 协议栈方案
+  auto-route: true            # 自动设置路由表：流量自动导入 TUN 网卡
+  auto-detect-interface: true # 自动识别出口网卡：防止流量环路
+  dns-hijack:                 # DNS 劫持：强制拦截发往 53 端口的请求，6893414df1aadbfbdac2486557e8ff92防止 DNS 泄露
+    - any:53
+  mtu: 1400                   # 最大传输单元：1400 是游戏 UDP 包的最佳值，减少丢包
+
+# [第三部分：DNS 防污染系统]
+dns:
+  enable: true                # 必须开启，否则规则分流无法正常解析域名
+  listen: 0.0.0.0:7874        # 本地 DNS 监听端口
+  enhanced-mode: fake-ip      # 增强模式：Fake-IP (游戏响应最快，秒连服务器)
+  fake-ip-range: 198.18.0.1/16 # 虚拟 IP 地址段
+  fake-ip-filter:             # 虚拟 IP 过滤白名单 (这些域名必须返回真实 IP)
+    - '+.lan'                 # 局域网后缀
+    - '+.local'               # 本地设备后缀
+    - 'stun.*'                # STUN 服务：游戏语音和联机核心，必须真实 IP
+    - '+.proximabeta.com'
+    - '+.levelinfinite.com'
+    - '+.honorofkings.com'    # 强制王者荣耀域名返回真实 IP
+    - '+.pubgmobile.com'      # 强制 PUBG 域名返回真实 IP
+    - '+.bilibili.com'        # 解决 B 站视频 CDN 调度不准的问题
+  nameserver:                 # 主要 DNS (国内域名加速)
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  fallback:                   # 备用 DNS (境外域名加密查询)
+    - https://8.8.8.8/dns-query
+    - https://1.1.1.1/dns-query
+
+# [第四部分：外部节点订阅管理]
+proxy-providers:
+  MyNodes:                    # 订阅源名称
+    type: http                # 通过 HTTP 获取
+    url: '订阅链接'
+    interval: 86400           # 订阅更新周期：24小时
+    path: './proxy_provider/nodes.yaml' # 本地存储路径
+    health-check:             # 节点健康检查 (心跳)
+      enable: true
+      url: 'http://connectivitycheck.gstatic.com/generate_204'
+      interval: 600           # 每10分钟检测一次节点存活
+
+# [第五部分：策略组 (流量分配核心)]
+# 锚点定义：提取重复的筛选规则，保持代码整洁
+FilterHK: &FilterHK '(?i)香港|HK|Hong Kong'
+FilterTW: &FilterTW '(?i)台湾|TW|Taiwan'
+FilterJP: &FilterJP '(?i)日本|JP|Japan'
+FilterKR: &FilterKR '(?i)韩国|KR|Korea'
+FilterUS: &FilterUS '(?i)美国|US|United States'
+FilterSG: &FilterSG '(?i)新加坡|SG|Singapore'
+FallBack: &FallBack {type: fallback, interval: 60, url: 'http://connectivitycheck.gstatic.com/generate_204', use: [MyNodes]}
+
+proxy-groups:
+  # 1. 总代理：负责常规网页、APP 流量
+  - {name: Proxy, type: select, proxies: [自动测试, 🇭🇰 香港节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇺🇸 美国节点, 🇼🇸 台湾节点]}
+  
+  # 2. 游戏专用：追求低延迟，建议手动选定节点或走特定线路
+  - {name: Game, type: select, proxies: [🇭🇰 香港节点, 🇼🇸 台湾节点, 🇰🇷 韩国节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点, DIRECT]}
+  
+  # 3. Steam 加速：社区走代理，下载走直连
+  - {name: Steam, type: select, proxies: [DIRECT, 🇭🇰 香港节点, 🇼🇸 台湾节点]}
+
+  # 4. AI 专用：支持 ChatGPT/Gemini 等
+  - {name: AI_Service, type: select, proxies: [🇼🇸 台湾节点, 🇺🇸 美国节点, 🇰🇷 韩国节点, 🇯🇵 日本节点]}
+
+  # 5. 其他垂直服务分组
+  - {name: Bilibili, type: select, proxies: [DIRECT, 🇭🇰 香港节点, 🇼🇸 台湾节点]}
+  - {name: YouTube, type: select, proxies: [Proxy, 🇺🇸 美国节点, 🇭🇰 香港节点]}
+  - {name: TikTok, type: select, proxies: [🇯🇵 日本节点, 🇰🇷 韩国节点, 🇺🇸 美国节点]}
+  - {name: Android, type: select, proxies: [Proxy, 🇺🇸 美国节点, 🇭🇰 香港节点]}
+  - {name: Apple, type: select, proxies: [Proxy, 🇺🇸 美国节点, 🇭🇰 香港节点]}
+  - {name: Microsoft, type: select, proxies: [Proxy, 🇺🇸 美国节点, 🇭🇰 香港节点]}
+
+  # 6. 自动选路分组：寻找当前最快节点
+  - {name: 自动测试, type: url-test, proxies: [🇭🇰 香港节点, 🇸🇬 新加坡节点, 🇯🇵 日本节点, 🇺🇸 美国节点], url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 300, tolerance: 50}
+
+  # 7. 地区自动筛选 (基于 Fallback 回退策略)
+  - {name: 🇭🇰 香港节点, <<: *FallBack, filter: *FilterHK}
+  - {name: 🇼🇸 台湾节点, <<: *FallBack, filter: *FilterTW}
+  - {name: 🇯🇵 日本节点, <<: *FallBack, filter: *FilterJP}
+  - {name: 🇰🇷 韩国节点, <<: *FallBack, filter: *FilterKR}
+  - {name: 🇺🇸 美国节点, <<: *FallBack, filter: *FilterUS}
+  - {name: 🇸🇬 新加坡节点, <<: *FallBack, filter: *FilterSG}
+
+# [第六部分：外部规则库订阅 (远程规则自动更新)]
+rule-providers:
+  Gemini: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Gemini/Gemini.yaml', interval: 86400, format: yaml, proxy: Proxy}
+  OpenAI: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/OpenAI/OpenAI.yaml', interval: 86400, format: yaml, proxy: Proxy}
+  Steam: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Steam/Steam.yaml', interval: 86400, format: yaml, proxy: Steam}
+  YouTube: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/YouTube/YouTube.yaml', interval: 86400, format: yaml, proxy: Proxy}
+  Bilibili: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/BiliBili/BiliBili.yaml', interval: 86400, format: yaml, proxy: Bilibili}
+  GameRule: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml', interval: 86400, format: yaml, proxy: Game}
+  Google: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Google/Google.yaml', interval: 86400, format: yaml, proxy: Android}
+  Apple: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple.yaml', interval: 86400, format: yaml, proxy: Apple}
+  Microsoft: {type: http, behavior: classical, url: 'https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml', interval: 86400, format: yaml, proxy: Microsoft}
+
+# [第七部分：规则列表 (核心匹配逻辑)]
+# 注意：Clash 遵循「自上而下」匹配原则，一旦匹配成功即停止后续查找
+rules:
+  # 1. 统一游戏规则 (高优先级)
+  # 交由专业的第三方规则库识别，不再需要手动写域名
+  - AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
+  - DOMAIN-SUFFIX,honorofkings.com,Game
+  - DOMAIN-SUFFIX,pubgmobile.com,Game
+  - DOMAIN-SUFFIX,akamaized.net,Game
+  - RULE-SET,GameRule,Game
+
+  # 2. 核心业务分类 (中优先级：精准识别各类 APP/网页)
+  - RULE-SET,Gemini,AI_Service      # Gemini 流量分流
+  - RULE-SET,OpenAI,AI_Service      # ChatGPT 流量分流
+  - RULE-SET,Steam,Steam            # Steam 下载与社区分流
+  - RULE-SET,Bilibili,Bilibili      # B站大陆与海外版自动切换
+  - RULE-SET,YouTube,YouTube        # YouTube 视频流量
+  - RULE-SET,Apple,Apple            # 苹果服务 (AppStore, iCloud等)
+  - RULE-SET,Microsoft,Microsoft    # 微软服务 (Office, Windows更新)
+  - RULE-SET,Google,Android         # 谷歌基础服务与 Android 更新
+
+  # 3. 局域网直连 (低优先级 - 根据要求下移)
+  # 只有上面的特定业务没匹配到时，才会检查是否为本地流量，确保代理规则不被误杀
+  - IP-CIDR,192.168.0.0/16,DIRECT
+  - IP-CIDR,10.0.0.0/8,DIRECT
+  - IP-CIDR,172.16.0.0/12,DIRECT
+  - IP-CIDR,127.0.0.0/8,DIRECT
+  - GEOIP,LAN,DIRECT
+
+  # 4. 最终收尾规则 (兜底)
+  - GEOIP,CN,DIRECT                  # 中国 IP 地址 -> 直连
+  - MATCH,Proxy                      # 漏网之鱼 (国外未知域名) -> 走 Proxy 总代理
