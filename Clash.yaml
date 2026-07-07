@@ -1,0 +1,447 @@
+# ==============================================================================
+# 「Clash」
+#  [橙子橙汁]
+# ==============================================================================
+
+# [基础设置]
+# 1. 基础连接与端口配置
+port: 7890
+socks-port: 7891
+redir-port: 7892        # 与原本 mixed-port 冲突，此处固定为重定向端口
+tproxy-port: 7895       # TProxy 端口
+mixed-port: 7893        # 将原本 7892 修改为 7893，避免端口占用冲突
+allow-lan: true         # 允许局域网连接
+bind-address: "*"       # 监听所有网卡
+mode: rule              # 规则模式
+log-level: info         # 日志等级
+ipv6: false             # 禁用 IPv6
+
+# 2. 外部控制与 UI 面板 (针对 OpenWrt 路径优化)
+# 将控制地址改为 0.0.0.0 以便从电脑浏览器访问手机或路由器的 9090 端口
+external-controller: 127.0.0.1:9090
+secret: "7355608"       # 你的原始密钥
+
+# 3. 性能与连接优化
+unified-delay: true     # 统一延迟计算
+tcp-concurrent: true    # TCP 并发连接
+global-client-fingerprint: chrome # 全局指纹模拟
+keep-alive-interval: 15
+keep-alive-idle: 600
+geox-url: {}
+
+profile: # 记忆选中的节点
+  store-selected: true
+
+
+# 4. 流量嗅探 (Sniffer) - 解决流媒体分流与 Fake-IP 还原
+sniffer:
+  enable: true
+  override-destination: true
+  parse-pure-ip: true
+  sniff:
+    QUIC:
+      ports: [443]
+    TLS:
+      ports: [443, 8443]
+    HTTP:
+      ports: [80, 8080-8880]
+      override-destination: true
+  force-domain:
+    - "+.netflix.com"
+    - "+.nflxvideo.net"
+    - "+.amazonaws.com"
+    - "+.media.dssott.com"
+  skip-domain:
+    - Mijia Cloud
+    - dlg.io.mi.com
+    - "+.oray.com"
+    - "+.sunlogin.net"
+    - "+.push.apple.com"
+
+dns:
+  enable: true
+  enhanced-mode: fake-ip   # 必须使用 fake-ip
+  fake-ip-range: 198.18.0.1/16
+  listen: 0.0.0.0:1053
+  nameserver:
+    - 119.29.29.29
+    - 223.5.5.5
+  proxy-server-nameserver:
+    - 119.29.29.29
+
+tun:
+  enable: true
+  stack: system            # Windows/Android 推荐 system，macOS 推荐 gvisor
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - "any:53"             # 劫持所有 DNS 请求
+    - "tcp://any:53"
+  
+  # 2. 代理服务器域名解析：防止解析代理节点域名时发生泄露
+  proxy-server-nameserver:
+    - https://dns.alidns.com/dns-query
+  
+  # 3. 默认解析服务器：主要负责国内域名
+  nameserver:
+    - https://dns.alidns.com/dns-query
+    - https://doh.pub/dns-query
+  
+  # 4. 关键：分流解析政策 (DNS 泄露的终结者)
+  # 强制让国外/特定服务走加密 DNS 且通过代理，或者直接交给 fake-ip 逻辑
+  nameserver-policy:
+    "geosite:cn": [https://dns.alidns.com/dns-query, https://doh.pub/dns-query]
+    "geosite:geolocation-!cn": [https://dns.google/dns-query, https://1.1.1.1/dns-query]
+    "+.google.com,+.googleapis.com,+.gstatic.com": [https://8.8.8.8/dns-query]
+    "+.facebook.com,+.instagram.com,+.twitter.com": [https://1.1.1.1/dns-query]
+    
+  fake-ip-filter: # 完整保留你原本的所有过滤域名
+    - '+.lan'
+    - '+.local'
+    - 'stun.*'
+    - 'ntp.*'
+    - '+.pool.ntp.org'
+    - '*.msftconnecttest.com'
+    - '*.msftncsi.com'
+    - '+.sony.com'
+    - '+.n.shifen.com'
+    - 'msftconnecttest.com'
+    - 'workplace.com'
+    - '+.tencent.com'
+    - '+.qq.com'
+    - '+.weixin.com'
+    - '+.wechat.com'
+    - '+.qlogo.cn'
+    - '+.qpic.cn'
+    - '+.gtimg.cn'
+    - '+.alipay.com'
+    - '+.taobao.com'
+    - '+.tmall.com'
+    - '+.alicdn.com'
+    - '+.aliyun.com'
+    - '+.baidu.com'
+    - '+.bdstatic.com'
+    - '+.douyin.com'
+    - '+.amemv.com'
+    - '+.pstatp.com'
+    - '+.jd.com'
+    - '+.xiaomi.com'
+    - '+.mi-img.com'
+    - 'short.weixin.qq.com'
+    - 'szshort.weixin.qq.com'
+    - 'mars.weixin.qq.com'
+    - 'long.weixin.qq.com'
+    - 'extshort.weixin.qq.com'
+    - 'minorshort.weixin.qq.com'
+    - 'szextshort.weixin.qq.com'
+    - 'szminorshort.weixin.qq.com'
+    - 'support.weixin.qq.com'
+    - 'wechatos.net'
+    - '+.weixin.qq.com'
+
+# [外部节点订阅]
+proxy-providers:
+  Airport_A:
+    type: http
+    url: 'https://sub1.strawberrygummy.com/api/v1/client/profile?token=9e4a0808d4dd5dd4d9b9b86f5c7d10e1'
+    interval: 86400
+    header:
+      User-Agent: ["ClashMeta", "Mihomo", "Clash"]  #UA身份伪装
+    health-check: {enable: true, url: 'http://connectivitycheck.gstatic.com/generate_204', interval: 600}
+    
+# [策略组]
+# 1. 国家/地区正则定义
+FilterHK: &FilterHK '(?i)香港|HK|Hong Kong'
+FilterTW: &FilterTW '(?i)台湾|TW|Taiwan'
+FilterJP: &FilterJP '(?i)日本|JP|Japan'
+FilterKR: &FilterKR '(?i)韩国|KR|Korea'
+FilterUS: &FilterUS '(?i)美国|US|United States'
+FilterSG: &FilterSG '(?i)新加坡|SG|Singapore'
+FilterCA: &FilterCA '(?i)加拿大|CA|Canada'
+FilterUK: &FilterUK '(?i)英国|UK|United Kingdom'
+FilterAQ: &FilterAQ '(?i)南极洲|AQ|Antarctica'
+FilterMO: &FilterMO '(?i)澳门|MO|Macau'
+FilterNL: &FilterNL '(?i)荷兰|NL|Netherlands'
+FilterDE: &FilterDE '(?i)德国|DE|Germany'
+FilterIN: &FilterIN '(?i)印度|IN|India'
+FilterTR: &FilterTR '(?i)土耳其|TR|Turkey'
+FilterPK: &FilterPK '(?i)巴基斯坦|PK|Pakistan'
+FilterVN: &FilterVN '(?i)越南|VN|Vietnam'
+FilterEG: &FilterEG '(?i)埃及|EG|Egypt'
+FilterMY: &FilterMY '(?i)马来西亚|MY|Malaysia'
+FilterID: &FilterID '(?i)印尼|ID|Indonesia'
+FilterFR: &FilterFR '(?i)法国|FR|France'
+FilterLT: &FilterLT '(?i)立陶宛|LT|Republic'
+FilterMD: &FilterMD '(?i)摩尔多瓦|MD|Moldova'
+FilterPH: &FilterPH '(?i)菲律宾|PH|the Philippines'
+
+
+# 2. 自动选择逻辑模板
+FallA: &FallA {type: url-test, interval: 300, tolerance: 50, url: 'http://connectivitycheck.gstatic.com/generate_204', use: [Airport_A]}
+
+proxy-groups:
+  # 1. 总控
+  - {name: Proxy, type: select, proxies: [🔘 机场全量, 🇭🇰 香港, 🇼🇸 台湾, 🇲🇴 澳门, 🇯🇵 日本, 🇺🇸 美国, DIRECT]}
+
+  # 2. 逻辑组
+  - {name: AI_Service, type: select, proxies: [Proxy, 🇼🇸 台湾, 🇰🇷 韩国, 🇺🇸 美国]}
+  
+  - {name: NotebookLM, type: select, proxies: [Proxy, 🇼🇸 台湾, 🇰🇷 韩国, 🇺🇸 美国]}
+  
+  - {name: Game, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇰🇷 韩国, 🇺🇸 美国, DIRECT]}
+  
+  - {name: YouTube, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇰🇷 韩国, 🇺🇸 美国]}
+  
+  - {name: Telegram, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇺🇸 美国]}
+  
+  - {name: TikTok, type: select, proxies: [Proxy, 🇯🇵 日本]}
+  
+  - {name: Bilibili, type: select, proxies: [DIRECT, Proxy, 🇭🇰 香港, 🇲🇴 澳门, 🇼🇸 台湾]}
+  
+  - {name: 社交媒体, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇺🇸 美国]}
+  
+  - {name: Apple, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇺🇸 美国]}
+  
+  - {name: Microsoft, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇺🇸 美国]}
+  
+  - {name: Android, type: select, proxies: [Proxy, 🇭🇰 香港, 🇼🇸 台湾, 🇯🇵 日本, 🇺🇸 美国]}
+
+  
+   # 4.DL 专属
+  - {name: 🔘 机场全量, type: select, use: [Airport_A]}
+  - {name: 🇭🇰 香港, <<: *FallA, filter: *FilterHK}
+  
+  - {name: 🇼🇸 台湾, <<: *FallA, filter: *FilterTW}
+  
+  - {name: 🇯🇵 日本, <<: *FallA, filter: *FilterJP}
+  
+  - {name: 🇺🇸 美国, <<: *FallA, filter: *FilterUS}
+  
+  - {name: 🇰🇷 韩国, <<: *FallA, filter: *FilterKR}
+  
+  - {name: 🇸🇬 新加坡, <<: *FallA, filter: *FilterSG}
+  
+  - {name: 🇲🇴 澳门, <<: *FallA, filter: *FilterMO}
+  
+ # - {name: 🇬🇧 英国, <<: *FallA, filter: *FilterUK}
+ # - {name: 🇨🇦 加拿大, <<: *FallA, filter: *FilterCA}
+ 
+ # - {name: 🇩🇪 德国, <<: *FallA, filter: *FilterDE}
+ 
+ # - {name: 🇮🇳 印度, <<: *FallA, filter: *FilterIN}
+ 
+ # - {name: 🇹🇷 土耳其, <<: *FallA, filter: *FilterTR}
+ 
+ # - {name: 🇵🇰 巴基斯坦, <<: *FallA, filter: *FilterPK}
+ 
+ # - {name: 🇻🇳 越南, <<: *FallA, filter: *FilterVN}
+ 
+ # - {name: 🇪🇬 埃及, <<: *FallA, filter: *FilterEG}
+ 
+ # - {name: 🇲🇾 马来西亚, <<: *FallA, filter: *FilterMY}
+  
+ # - {name: 🇵🇭 菲律宾, <<: *FallA, filter: *FilterPH}
+ 
+
+# 规则库订阅
+rule-providers:
+
+  # 应用分流规则
+  BilibiliHMT:
+    type: http
+    behavior: classical
+    format: yaml
+    # 使用 jsdelivr 加速镜像，解决 404 和连接超时问题
+    url: "https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/BiliBili/BiliBili.yaml"
+    path: ./ruleset/Bilibili.yaml
+    interval: 86400
+    proxy: Proxy
+
+  Telegram: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  TikTok: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/TikTok/TikTok.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Gemini: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Gemini/Gemini.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  OpenAI: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/OpenAI/OpenAI.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  YouTube: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/YouTube/YouTube.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  youtube-music: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/YouTubeMusic/YouTubeMusic.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Facebook: 
+    type: http
+    behavior: classical
+    url: 'https://ghproxy.net/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Facebook/Facebook.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Instagram: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Instagram/Instagram.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Twitter: 
+    type: http
+    behavior: classical
+    url: 'https://ghproxy.net/https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Twitter/Twitter.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  WhatsApp: 
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/CodeN1998/ios_rule_script/refs/heads/master/rule/Clash/Whatsapp/Whatsapp.yaml"
+    path: ./ruleset/whatsapp.yaml
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+     #游戏分流规则
+  GameRule: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Game/Game.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Honor of kings: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/CodeN1998/n/refs/heads/main/Honor%20of%20kings.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+    
+    # FCM 系统推送规则 (解决通知延迟)
+  FCM_Rule: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/CodeN1998/ios_rule_script/refs/heads/master/rule/Clash/GoogleFCM/GoogleFCM_No_Resolve.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+  # 系统基础服务规则
+  Google: 
+    type: http
+    behavior: classical
+    url: 'https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Apple: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Apple/Apple.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+  Microsoft: 
+    type: http
+    behavior: classical
+    url: 'https://fastly.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Clash/Microsoft/Microsoft.yaml'
+    interval: 86400
+    format: yaml
+    proxy: Proxy
+    
+     # 中国 IP 归属地 (用于处理直连 IP 流量)
+  china_ip: 
+    type: http
+    behavior: ipcidr
+    format: yaml
+    url: "https://cdn.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@meta/geo/geoip/cn.yaml"
+    path: ./ruleset/china_ip.yaml
+    interval: 86400
+    proxy: Proxy
+
+# [第七部分：规则分流逻辑]
+rules:
+    #屏蔽 QUIC 协议
+  #- AND,((NETWORK,UDP),(DST-PORT,443)),REJECT
+  
+    # NotebookLM 专项优化
+  - DOMAIN-SUFFIX,notebooklm.google,NotebookLM
+  - DOMAIN,notebooklm.google,NotebookLM
+  - DOMAIN-SUFFIX,notebook-static.google,NotebookLM
+  - DOMAIN,content-notebooklm.googleapis.com,NotebookLM
+  - DOMAIN-KEYWORD,notebooklm,NotebookLM
+  
+    # steam下载直连
+  - DOMAIN-KEYWORD,steamcontent,DIRECT
+  - DOMAIN-SUFFIX,cm.steampowered.com,DIRECT
+  - DOMAIN-SUFFIX,steamstatic.com,DIRECT
+  
+    # 应用规则分流
+  - RULE-SET,Gemini,AI_Service,no-resolve
+  - RULE-SET,OpenAI,AI_Service,no-resolve
+  - RULE-SET,Telegram,Telegram,no-resolve
+  - RULE-SET,TikTok,TikTok,no-resolve
+  - RULE-SET,BilibiliHMT,Bilibili,no-resolve
+  - RULE-SET,YouTube,YouTube,no-resolve
+  - RULE-SET,youtube-music,YouTube,no-resolve
+  - RULE-SET,Instagram,社交媒体,no-resolve
+  - RULE-SET,Facebook,社交媒体,no-resolve
+  - RULE-SET,Twitter,社交媒体,no-resolve
+  - RULE-SET,WhatsApp,社交媒体,no-resolve
+  
+    # 游戏规则分流
+  - RULE-SET,GameRule,Game,no-resolve
+  - RULE-SET,Honor of kings,Game,no-resolve
+  
+    # 系统规则分流
+  - DOMAIN,aida.googleapis.com,Android,no-resolve
+  - RULE-SET,Google,Android,no-resolve
+  - RULE-SET,Apple,Apple,no-resolve
+  - RULE-SET,Microsoft,Microsoft,no-resolve
+  - RULE-SET,FCM_Rule,Android,no-resolve
+  
+    # 兜底
+  - RULE-SET,china_ip,DIRECT,no-resolve
+  - IP-CIDR,192.168.0.0/16,DIRECT,no-resolve
+  - GEOIP,CN,DIRECT,no-resolve
+  - MATCH,Proxy
