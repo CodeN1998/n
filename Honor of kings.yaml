@@ -1,5 +1,6 @@
 
     # 王者荣耀国际服
+payload:
   - DOMAIN-SUFFIX,hok-dr.intlgame.com
   - DOMAIN-SUFFIX,hok.intlgame.com
   - DOMAIN-SUFFIX,intlgame.com
