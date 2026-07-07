@@ -143,7 +143,7 @@ tun:
 proxy-providers:
   Airport_A:
     type: http
-    url: 'https://sub1.strawberrygummy.com/api/v1/client/profile?token=9e4a0808d4dd5dd4d9b9b86f5c7d10e1'
+    url: '订阅链接'
     interval: 86400
     header:
       User-Agent: ["ClashMeta", "Mihomo", "Clash"]  #UA身份伪装
