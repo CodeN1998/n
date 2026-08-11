@@ -1,4 +1,5 @@
     # 小米系统服务直连（解决系统设置）
+payload:
   - DOMAIN-SUFFIX,xiaomi.com
   - DOMAIN-SUFFIX,xiaomi.net
   - DOMAIN-SUFFIX,mi.com
