@@ -1,1 +1,6 @@
-
+    # 小米系统服务直连（解决系统设置）
+  - DOMAIN-SUFFIX,xiaomi.com
+  - DOMAIN-SUFFIX,xiaomi.net
+  - DOMAIN-SUFFIX,mi.com
+  - DOMAIN-SUFFIX,miui.com
+  - DOMAIN-KEYWORD,xiaomi
