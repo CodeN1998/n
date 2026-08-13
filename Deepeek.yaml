@@ -1,0 +1,7 @@
+payload:
+  - DOMAIN,deepseek.ai
+  - DOMAIN,deepseek.com
+  - DOMAIN-KEYWORD,deepseek
+  - DOMAIN-SUFFIX,deepseek.ai
+  - DOMAIN-SUFFIX,deepseek.com
+  - DOMAIN-SUFFIX,chat.deepseek.com
