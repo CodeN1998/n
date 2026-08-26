@@ -1,3 +1,4 @@
+#各类仅支持直连的域名或ip
 payload:
-  - DOMAIN-SUFFIX,tobaccojp.com
+  - DOMAIN-SUFFIX,tobaccojp.com #网站：云雾商店
 
